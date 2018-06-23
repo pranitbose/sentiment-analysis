@@ -11,6 +11,7 @@ from utilities import Utility
 import pickle
 import pandas as pd
 
+# Generates various plots to visulize the performance of classifiers on the dataset
 def analyzeVisualize(sentiment):
 	with open('pickled/pipeline_holdout.pickle', 'rb') as pipeline_holdout:
 		pipeline = pickle.load(pipeline_holdout)
@@ -76,7 +77,7 @@ if __name__ == "__main__":
 	with open('pickled/model_holdout.pickle', 'rb') as model_holdout:
 		model = pickle.load(model_holdout)
 
-	model_svc = model[2][1]
+	model_svc = model[2][1] # Using LinearSVC classifier
 	
 	print('\nEnter your review:')
 	user_review = input()

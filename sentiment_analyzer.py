@@ -66,7 +66,7 @@ class SentimentAnalyzer:
 		nltk_preprocessor = NltkPreprocessor()
 
 		with mp.Pool() as pool:
-			reviews_df = reviews_df.assign(cleaned = pool.map(nltk_preprocessor.tokenize, reviews_df['reviewText']))
+			reviews_df = reviews_df.assign(cleaned = pool.map(nltk_preprocessor.tokenize, reviews_df['reviewText'])) # Parallel processing
 		
 		if do_pickle:
 			reviews_df.to_pickle('pickled/product_reviews_preprocessed.pickle')

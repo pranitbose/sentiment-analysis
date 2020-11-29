@@ -29,7 +29,7 @@ class SentimentAnalyzer:
 	def __init__(self):
 		self.clf = [
 			('MNB', MultinomialNB(alpha = 1.0, fit_prior = False)),
-			('LR', LogisticRegression(C = 5.0, penalty = 'l2', max_iter = 100, dual = True)),
+			('LR', LogisticRegression(C = 5.0, penalty = 'l2', solver = 'liblinear', max_iter = 100, dual = True)),
 			('SVM', LinearSVC(C = 0.55, penalty = 'l2', max_iter = 1000, dual = True)),
 			('RF', RandomForestClassifier(n_jobs = -1, n_estimators = 100, min_samples_split = 40, max_depth = 90, min_samples_leaf = 3))
 		]
@@ -95,7 +95,7 @@ class SentimentAnalyzer:
 		X = reviews_df_preprocessed.iloc[:, -1].values
 		y = reviews_df_preprocessed.iloc[:, -2].values
 
-		kf = KFold(n_splits = 5, random_state = 42)
+		kf = KFold(n_splits = 5, random_state = 42, shuffle = True)
 		train_test_indices = kf.split(X, y)
 
 		print('Splitting data completed!')
@@ -169,12 +169,12 @@ class SentimentAnalyzer:
 
 		return clf_accuracy, clf_precision, clf_recall, clf_f1, clf_roc_auc, clf_cm, clf_cr
 
-	def holdoutStrategy(self, reviews_df_preprocessed, do_pickle):
+	def holdoutStrategy(self, reviews_df_preprocessed, do_pickle, do_train_data):
 		print('\nHoldout Strategy...\n')
 
-		# X_train, X_test, y_train, y_test = self.trainTestSplit(reviews_df_preprocessed)
-
-		# pipeline, model = self.trainData(X_train, y_train, self.clf)
+		if do_train_data:
+			X_train, X_test, y_train, y_test = self.trainTestSplit(reviews_df_preprocessed)
+			pipeline, model = self.trainData(X_train, y_train, self.clf)
 
 		if do_pickle:
 			with open('pickled/features_train.pickle', 'wb') as features_train:
@@ -212,16 +212,16 @@ class SentimentAnalyzer:
 			with open('pickled/metrics_cr_holdout.pickle', 'wb') as metrics_cr:
 				pickle.dump(clf_cr, metrics_cr)
 
-		metrics_list = [
-			('Classifier', self.clf_names),
-			('Accuracy', clf_accuracy),
-			('Precision', clf_precision),
-			('Recall', clf_recall),
-			('F1-score', clf_f1),
-			('ROC AUC', clf_roc_auc)
-		]
+		metrics_list = {
+			'Classifier': self.clf_names,
+			'Accuracy': clf_accuracy,
+			'Precision': clf_precision,
+			'Recall': clf_recall,
+			'F1-score': clf_f1,
+			'ROC AUC': clf_roc_auc
+		}
 
-		metrics_df = pd.DataFrame.from_items(metrics_list)
+		metrics_df = pd.DataFrame.from_dict(metrics_list)
 
 		for i in range(0, len(self.clf)):
 			if i == 0:
@@ -262,9 +262,9 @@ class SentimentAnalyzer:
 			X_train, y_train = X[train_idx], y[train_idx]
 			X_test, y_test = X[test_idx], y[test_idx]
 
-			pipeline, model = self.trainData(X_train, y_train, self.clf)
+			_, model = self.trainData(X_train, y_train, self.clf)
 			prediction = self.predictData(X_test, model)
-			clf_accuracy, clf_precision, clf_recall, clf_f1, clf_roc_auc, clf_cm, clf_cr = self.evaluate(y_test, prediction)
+			clf_accuracy, clf_precision, clf_recall, clf_f1, clf_roc_auc, clf_cm, _ = self.evaluate(y_test, prediction)
 
 			for j in range(0, len(self.clf)):
 				accuracy[j].append(clf_accuracy[j])
@@ -296,16 +296,16 @@ class SentimentAnalyzer:
 			f1_score.append(np.mean(f1[i]))
 			auc.append(np.mean(roc_auc[i]))
 
-		metrics_list = [
-			('Classifier', self.clf_names),
-			('Accuracy', clf_accuracy),
-			('Precision', clf_precision),
-			('Recall', clf_recall),
-			('F1-score', clf_f1),
-			('ROC AUC', clf_roc_auc)
-		]
+		metrics_list = {
+			'Classifier': self.clf_names,
+			'Accuracy': clf_accuracy,
+			'Precision': clf_precision,
+			'Recall': clf_recall,
+			'F1-score': clf_f1,
+			'ROC AUC': clf_roc_auc
+		}
 
-		metrics_df = pd.DataFrame.from_items(metrics_list)
+		metrics_df = pd.DataFrame.from_dict(metrics_list)
 
 		print('Comparison of different metrics for the various Classifiers used:\n')
 		print(metrics_df)

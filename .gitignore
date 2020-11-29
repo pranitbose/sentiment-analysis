@@ -1,3 +1,6 @@
 pickled/
 plots/
 __pycache__/
+.DS_Store
+datasets/*
+!datasets/dataset_link.txt

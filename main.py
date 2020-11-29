@@ -6,7 +6,9 @@
 
 from sentiment_analyzer import SentimentAnalyzer
 from data_visualizer import DataVisualizer
-from utilities import Utility 
+from utilities import Utility
+
+from pathlib import Path
 
 import pickle
 import pandas as pd
@@ -36,13 +38,13 @@ def analyzeVisualize(sentiment):
 	
 	metrics_df.rename(columns = {"Accuracy": "value_Accuracy", "Precision": "value_Precision", "Recall": "value_Recall", "F1-score": "value_F1-score", "ROC AUC": "value_ROC AUC"}, inplace = True)
 	metrics_df['id'] = metrics_df.index
-	metrics_df_long = pd.wide_to_long(metrics_df, stubnames = 'value', i = 'id', j = 'id_m', sep = '_', suffix = '\w')
+	metrics_df_long = pd.wide_to_long(metrics_df, stubnames = 'value', i = 'id', j = 'id_m', sep = '_', suffix = r'[a-zA-Z0-9_\- ]+')
 	metrics_df_long['Metrics'] = metrics_df_long.index.get_level_values('id_m')
 	visualizer.plotClassifierPerformanceComparison(metrics_df_long, clf_names, 'Holdout')
 	
 	metrics_df_kfold.rename(columns = {"Accuracy": "value_Accuracy", "Precision": "value_Precision", "Recall": "value_Recall", "F1-score": "value_F1-score", "ROC AUC": "value_ROC AUC"}, inplace = True)
 	metrics_df_kfold['id'] = metrics_df_kfold.index
-	metrics_df_kfold_long = pd.wide_to_long(metrics_df_kfold, stubnames = 'value', i = 'id', j = 'id_m', sep = '_', suffix = '\w')
+	metrics_df_kfold_long = pd.wide_to_long(metrics_df_kfold, stubnames = 'value', i = 'id', j = 'id_m', sep = '_', suffix = r'[a-zA-Z0-9_\- ]+')
 	metrics_df_kfold_long['Metrics'] = metrics_df_kfold_long.index.get_level_values('id_m')
 	visualizer.plotClassifierPerformanceComparison(metrics_df_kfold_long, clf_names, 'K-Fold')
 	
@@ -59,20 +61,39 @@ def analyzeVisualize(sentiment):
 if __name__ == "__main__":
 
 	do_pickle = False
+	do_train_data = False
+	do_fetch_data = False
+	do_preprocess_data = False
+	do_cross_validation_strategy = False
+	do_holdout_strategy = False
+	do_analyze_visualize = False
 
-	# sentiment = SentimentAnalyzer()
+	# Create 'pickled' and 'plots' directories if not exists
+	Path('./pickled').mkdir(exist_ok = True)
+	Path('./plots').mkdir(exist_ok = True)
 
-	# senitment.getInitialData('datasets/product_reviews.json', do_pickle)
-	# reviews_df = pd.read_pickle('pickled/product_reviews.pickle')
+	if do_fetch_data or do_preprocess_data or do_cross_validation_strategy or do_holdout_strategy or do_analyze_visualize:
+		sentiment = SentimentAnalyzer()
 
-	# sentiment.preprocessData(reviews_df, do_pickle)
-	# reviews_df_preprocessed = pd.read_pickle('pickled/product_reviews_preprocessed.pickle')
-	# print(reviews_df_preprocessed.isnull().values.sum()) # Check for any null values
+	if do_fetch_data:
+		sentiment.getInitialData('datasets/product_reviews.json', do_pickle)
 
-	# sentiment.crossValidationStrategy(reviews_df_preprocessed, do_pickle)
-	# sentiment.holdoutStrategy(reviews_df_preprocessed, do_pickle)
+	if do_preprocess_data:
+		reviews_df = pd.read_pickle('pickled/product_reviews.pickle')
+		sentiment.preprocessData(reviews_df, do_pickle)
 
-	# analyzeVisualize(sentiment)
+	if do_cross_validation_strategy or do_holdout_strategy:
+		reviews_df_preprocessed = pd.read_pickle('pickled/product_reviews_preprocessed.pickle')
+		print(reviews_df_preprocessed.isnull().values.sum()) # Check for any null values
+
+	if do_cross_validation_strategy:
+		sentiment.crossValidationStrategy(reviews_df_preprocessed, do_pickle)
+	
+	if do_holdout_strategy: 
+		sentiment.holdoutStrategy(reviews_df_preprocessed, do_pickle, do_train_data)
+
+	if do_analyze_visualize:
+		analyzeVisualize(sentiment)
 	
 	with open('pickled/model_holdout.pickle', 'rb') as model_holdout:
 		model = pickle.load(model_holdout)

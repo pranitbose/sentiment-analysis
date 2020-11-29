@@ -31,7 +31,7 @@ class Utility:
 			acc.append([])
 
 		for k in num_features:
-			pipeline, model = self.sentiment.trainData(X_train, y_train, self.clf, k)
+			_, model = self.sentiment.trainData(X_train, y_train, self.clf, k)
 			prediction = self.sentiment.predictData(X_test, model)
 			clf_metrics = self.sentiment.evaluate(y_test, prediction)
 
